@@ -25,8 +25,8 @@ ipcMain.handle('deleteSetting', (_, id) => {
 
 ipcMain.removeHandler('updateSetting')
 ipcMain.handle('updateSetting', (_, data) => {
-  const stmt = db.prepare('UPDATE setting SET value = ? WHERE id = ?')
-  stmt.run(data.value, data.id)
+  const stmt = db.prepare('UPDATE setting SET value = ? WHERE key_id = ?')
+  stmt.run(data.value, data.key_id)
   return { success: true }
 })
 
