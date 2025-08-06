@@ -1,0 +1,32 @@
+{
+  "name": "electron-vue3-sqlite",
+  "version": "1.0.0",
+  "main": "main.js",
+  "scripts": {
+    "dev": "vite",
+    "electron": "electron .",
+    "build": "vite build && node scripts/copy-db.js"
+  },
+  "dependencies": {
+    "@mdi/font": "^7.4.47",
+    "better-sqlite3": "^12.2.0",
+    "cors": "^2.8.5",
+    "express": "^5.1.0",
+    "lucide-vue-next": "^0.525.0",
+    "sass": "^1.89.2",
+    "sass-loader": "^13.3.3",
+    "sqlite3": "^5.1.7",
+    "sweetalert2": "^11.22.2",
+    "vue": "^3.4.0",
+    "vue-router": "^4.5.1",
+    "vue-sweetalert2": "^5.0.11",
+    "vue-toastification": "^2.0.0-rc.5",
+    "vuetify": "^3.9.0-beta.1"
+  },
+  "devDependencies": {
+    "@vitejs/plugin-vue": "^5.0.0",
+    "electron": "^28.1.0",
+    "electron-rebuild": "^3.2.9",
+    "vite": "^5.0.0"
+  }
+}

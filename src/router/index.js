@@ -1,0 +1,49 @@
+import { createRouter, createWebHashHistory } from 'vue-router'
+import { Home, Karaoke, KaraokeRoom, KaraokeDay, BoardGame, Setting } from '@/pages'
+
+const routes = [
+  {
+    path: '/',
+    name: 'Home',
+    component: Home,
+    alias: '/home',
+    meta: { showHeader: false }
+  },
+  {
+    path: '/karaoke',
+    name: 'Karaoke',
+    component: Karaoke,
+    meta: { showHeader: true }
+  },
+  {
+    path: '/karaoke/:day',
+    name: 'KaraokeRoom',
+    component: KaraokeRoom,
+    meta: { showHeader: true }
+  },
+  {
+    path: '/karaoke/:room/:day',
+    name: 'KaraokeDay',
+    component: KaraokeDay,
+    meta: { showHeader: true }
+  },
+  {
+    path: '/boardgame',
+    name: 'BoardGame',
+    component: BoardGame,
+    meta: { showHeader: true }
+  },
+  {
+    path: '/settings',
+    name: 'Setting',
+    component: Setting,
+    meta: { showHeader: true }
+  }
+]
+
+const router = createRouter({
+  history: createWebHashHistory(),
+  routes,
+})
+
+export default router
