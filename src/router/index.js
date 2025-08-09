@@ -38,6 +38,12 @@ const routes = [
     name: 'Setting',
     component: Setting,
     meta: { showHeader: true }
+  },
+  {
+    path: '/print/slip/:id',
+    name: 'PrintableSlip',
+    component: () => import('@/components/printable/BookingSlip.vue'),
+    meta: { showHeader: false } // No layout for the slip
   }
 ]
 

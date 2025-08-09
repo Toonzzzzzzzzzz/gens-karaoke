@@ -86,7 +86,7 @@
             <p><strong>หมายเหตุ:</strong> {{ selectedBooking.note || '-' }}</p>
           </div>
           <div class="booking-footer">
-            <button class="red-button" v-if="!isFutureOrToday" @click="deleteQueue" style="margin-right: 10px;"><Trash class="icon" /><span>ลบ</span></button>
+            <button class="red-button" v-if="isFutureOrToday" @click="deleteQueue" style="margin-right: 10px;"><Trash class="icon" /><span>ลบ</span></button>
             <button class="back-button" v-if="isFutureOrToday" @click="editQueue"><ClipboardEdit class="icon" /><span>แก้ไข</span></button>
           </div>
         </div>
@@ -189,44 +189,61 @@ function selectBooking(booking) {
 async function handleBooking(data) {
   isLoading.value = true;
   const safeData = toRaw(data);
-  // console.log('safeData', safeData)
+
   if (editStatus.value) {
-    console.log('editStatus.value', editStatus.value)
+    // Logic for editing an existing booking
     try {
       const result = await window.api.invoke('updateQueue', safeData);
       if (result.success) {
         showModal.value = false;
         toast.success('แก้ไขคิวสำเร็จ');
-        setTimeout(() => {
-          window.location.reload();
-        }, 1000);
+        
+        // Update the local data to reflect the change instantly
+        const index = queue.value.data.findIndex(b => b.id === safeData.id);
+        if (index !== -1) {
+          // To get the correct staff name, we need to refetch or be clever
+          const staff = staffs.value.find(s => s.id === safeData.staff);
+          queue.value.data[index] = { ...safeData, staff_name: staff ? staff.name : 'ไม่ระบุ' };
+        }
+        selectedBooking.value = null;
+        editStatus.value = false;
       } else {
         toast.error(result.error);
-        isLoading.value = false;
       }
     } catch (error) {
-      isLoading.value = false;
       toast.error('เกิดข้อผิดพลาดในการแก้ไขคิว');
       console.error(error);
+    } finally {
+      isLoading.value = false;
     }
-  }else{
-    console.log('addQueue')
+  } else {
+    // Logic for adding a new booking
     try {
       const result = await window.api.invoke('addQueue', safeData);
-      if (result.success) {
+      if (result.success && result.id) {
         showModal.value = false;
-        toast.success('จองคิวสำเร็จ');
-        setTimeout(() => {
+        toast.success('จองคิวสำเร็จ กำลังพิมพ์ใบเสร็จ...');
+
+        // Call the print function and wait for it to complete
+        await window.api.invoke('printSlip', { queueId: result.id });
+
+        // Fetch the newly created booking to get all details (like staff_name)
+        const newBookingResult = await window.api.invoke('getQueueById', result.id);
+        if (newBookingResult.success) {
+          queue.value.data.push(newBookingResult.data);
+        } else {
+          // As a fallback, just reload the page if fetching the new data fails
           window.location.reload();
-        }, 1000);
+        }
+
       } else {
-        toast.error(result.error);
-        isLoading.value = false;
+        toast.error(result.error || 'ไม่สามารถจองคิวได้');
       }
     } catch (error) {
-      isLoading.value = false;
       toast.error('เกิดข้อผิดพลาดในการจองคิว');
       console.error(error);
+    } finally {
+      isLoading.value = false;
     }
   }
 }

@@ -19,7 +19,7 @@
           <v-card-text>
             <v-row>
               <v-col cols="12" md="12">
-                <v-img :src="logo1Preview" v-if="logo1Preview" class="mt-4" max-height="150" style="margin-bottom: 20px;"></v-img>
+                <v-img :src="logo1Base64" v-if="logo1Base64" class="mt-4" max-height="150" style="margin-bottom: 20px;"></v-img>
                 <v-file-input
                   label="Logo 1"
                   accept="image/*"
@@ -28,7 +28,7 @@
                 ></v-file-input>
               </v-col>
               <v-col cols="12" md="12">
-                <v-img :src="logo2Preview" v-if="logo2Preview" class="mt-4" max-height="150" style="margin-bottom: 20px;"></v-img>
+                <v-img :src="logo2Base64" v-if="logo2Base64" class="mt-4" max-height="150" style="margin-bottom: 20px;"></v-img>
                 <v-file-input
                   label="Logo 2"
                   accept="image/*"
@@ -53,7 +53,7 @@
               <v-col cols="12">
                 <v-select
                   label="เวลาเข้า"
-                  v-model="setting.start"
+                  v-model="checkin_start"
                   :items="times"
                   variant="outlined"
                 ></v-select>
@@ -61,7 +61,7 @@
               <v-col cols="12">
                 <v-select
                   label="เวลาออก"
-                  v-model="setting.end"
+                  v-model="checkout_end"
                   :items="times"
                   variant="outlined"
                 ></v-select>
@@ -212,51 +212,76 @@ const newStaffName = ref('')
 const newStaffPhone = ref('')
 const newRoomName = ref('')
 
-const logo1File = ref<File | null>(null)
-const logo2File = ref<File | null>(null)
+// These will now hold Base64 strings
+const logo1Base64 = ref<string | null>(null)
+const logo2Base64 = ref<string | null>(null)
+
 const shopName = ref('')
 const address = ref('')
-const logo1Preview = ref<string | null>(null)
-const logo2Preview = ref<string | null>(null)
+const checkin_start = ref('')
+const checkout_end = ref('')
 
-const onLogo1Selected = (event: Event) => {
+// Helper to convert file to Base64
+const toBase64 = (file: File): Promise<string> => new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.readAsDataURL(file);
+    reader.onload = () => resolve(reader.result as string);
+    reader.onerror = error => reject(error);
+});
+
+const onLogo1Selected = async (event: Event) => {
   const target = event.target as HTMLInputElement;
-  if (target.files) {
-    logo1File.value = target.files[0];
-    logo1Preview.value = URL.createObjectURL(target.files[0]);
+  if (target.files && target.files[0]) {
+    const file = target.files[0];
+    logo1Base64.value = await toBase64(file);
   }
 };
 
-const onLogo2Selected = (event: Event) => {
+const onLogo2Selected = async (event: Event) => {
   const target = event.target as HTMLInputElement;
-  if (target.files) {
-    logo2File.value = target.files[0];
-    logo2Preview.value = URL.createObjectURL(target.files[0]);
+  if (target.files && target.files[0]) {
+    const file = target.files[0];
+    logo2Base64.value = await toBase64(file);
   }
 };
 
 const saveSettings = async () => {
+  isLoading.value = true;
   try {
-    await window.api.invoke('saveSettings', {
+    const payload = {
       shopName: shopName.value,
       address: address.value,
-      logo1: logo1File.value,
-      logo2: logo2File.value,
-    });
-    toast.success('บันทึกการตั้งค่าสำเร็จ');
+      start: checkin_start.value,
+      end: checkout_end.value,
+      key_id: setting.value.key_id,
+      logo1: logo1Base64.value, // This is now a Base64 string
+      logo2: logo2Base64.value, // This is now a Base64 string
+    };
+
+    const result = await window.api.invoke('updateSetting', payload);
+
+    if (result.success) {
+      toast.success('บันทึกการตั้งค่าสำเร็จ');
+      await fetchSettings(); // Refresh data
+    } else {
+      toast.error(result.error || 'เกิดข้อผิดพลาดในการบันทึกการตั้งค่า');
+    }
   } catch (error) {
     toast.error('เกิดข้อผิดพลาดในการบันทึกการตั้งค่า');
     console.error(error);
+  } finally {
+    isLoading.value = false;
   }
 };
 
-const addStaff = () => {
+const addStaff = async () => {
   if (newStaffName.value.trim()) {
-    window.api.invoke('addStaff', { name: newStaffName.value, phone: newStaffPhone.value })
-    staffs.value?.push({ name: newStaffName.value, phone: newStaffPhone.value })
+    await window.api.invoke('addStaff', { name: newStaffName.value, phone: newStaffPhone.value })
     newStaffName.value = ''
     newStaffPhone.value = ''
     dialogAddStaff.value = false
+    await fetchStaffs();
+    toast.success('เพิ่มพนักงานสำเร็จ');
   }
 }
 
@@ -280,26 +305,26 @@ const removeStaff = async (id: number) => {
       const result = await window.api.invoke('deleteStaff', id);
       if (result.success) {
         toast.success('ลบพนักงานสำเร็จ');
-        staffs.value?.splice(staffs.value.findIndex(staff => staff.id === id), 1)
-        isLoading.value = false;
+        await fetchStaffs();
       } else {
         toast.error(result.error);
-        isLoading.value = false;
       }
     } catch (error) {
-      isLoading.value = false;
       toast.error('เกิดข้อผิดพลาดในการลบพนักงาน');
       console.error(error);
+    } finally {
+      isLoading.value = false;
     }
   }
 }
 
-const addRoom = () => {
+const addRoom = async () => {
   if (newRoomName.value.trim()) {
-    window.api.invoke('addRoom', { name: newRoomName.value })
-    rooms.value?.push({ name: newRoomName.value })
+    await window.api.invoke('addRoom', { name: newRoomName.value })
     newRoomName.value = ''
     dialogAddRoom.value = false
+    await fetchRooms();
+    toast.success('เพิ่มห้องสำเร็จ');
   }
 }
 
@@ -323,44 +348,49 @@ const removeRoom = async (id: number) => {
       const result = await window.api.invoke('deleteRoom', id);
       if (result.success) {
         toast.success('ลบห้องสำเร็จ');
-        rooms.value?.splice(rooms.value.findIndex(room => room.id === id), 1)
-        isLoading.value = false;
+        await fetchRooms();
       } else {
         toast.error(result.error);
-        isLoading.value = false;
       }
     } catch (error) {
-      isLoading.value = false;
       toast.error('เกิดข้อผิดพลาดในการลบห้อง');
       console.error(error);
+    } finally {
+      isLoading.value = false;
     }
   }
 }
 
-onMounted( async () => {
-  const [staffData, settingData, roomData] = await Promise.all([
-    window.api.invoke('getStaffs'),
-    window.api.invoke('getSetting', 'gens'),
-    window.api.invoke('getRooms'),
-  ])
-
-  staffs.value = staffData
-  setting.value = settingData
-  rooms.value = roomData
-  
-  isLoading.value = false
-
+const fetchSettings = async () => {
+  setting.value = await window.api.invoke('getSetting', 'gens');
   if (setting.value) {
     shopName.value = setting.value.shopName;
     address.value = setting.value.address;
-    times.value = generateTimeSlots('00:00', '23:59', 15);
-    if (setting.value.logo1) {
-      logo1Preview.value = `../assets/uploadImg/${setting.value.logo1}`;
-    }
-    if (setting.value.logo2) {
-      logo2Preview.value = `../assets/uploadImg/${setting.value.logo2}`;
-    }
+    checkin_start.value = setting.value.start;
+    checkout_end.value = setting.value.end;
+    logo1Base64.value = setting.value.logo1;
+    logo2Base64.value = setting.value.logo2;
   }
+}
+
+const fetchStaffs = async () => {
+  staffs.value = await window.api.invoke('getStaffs');
+}
+
+const fetchRooms = async () => {
+  rooms.value = await window.api.invoke('getRooms');
+}
+
+
+onMounted(async () => {
+  isLoading.value = true;
+  times.value = generateTimeSlots('00:00', '23:59', 15);
+  await Promise.all([
+    fetchSettings(),
+    fetchStaffs(),
+    fetchRooms(),
+  ]);
+  isLoading.value = false;
 })
 
 </script>

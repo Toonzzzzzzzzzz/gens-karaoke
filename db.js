@@ -1,5 +1,6 @@
 const Database = require('better-sqlite3');
 const path = require('path');
+const { key_id } = require('./config');
 const db = new Database(path.join(__dirname, 'data.db'));
 
 // เพิ่มบรรทัดนี้!
@@ -51,7 +52,31 @@ function initDatabase() {
       check_in TEXT,
       check_out TEXT
     );
-  `)
+  `);
+
+  // Insert initial data if tables are empty
+  const settingRow = db.prepare('SELECT COUNT(*) as count FROM setting').get();
+  if (settingRow.count === 0) {
+    db.prepare(
+      `INSERT INTO setting (key_id, name, address, start, end) VALUES (?, ?, ?, ?, ?)`
+    ).run(key_id, 'ชื่อร้าน', 'ที่อยู่', '00:00', '23:59');
+  }
+
+  const roomRow = db.prepare('SELECT COUNT(*) as count FROM room').get();
+  if (roomRow.count === 0) {
+    const insert = db.prepare('INSERT INTO room (name) VALUES (?)');
+    const rooms = ['Room 1'];
+    for (const room of rooms) {
+      insert.run(room);
+    }
+  }
+
+  const staffRow = db.prepare('SELECT COUNT(*) as count FROM staff').get();
+  if (staffRow.count === 0) {
+    db.prepare(
+      `INSERT INTO staff (name, phone) VALUES (?, ?)`
+    ).run('Default Staff', '0000000000');
+  }
 }
 
 initDatabase()
