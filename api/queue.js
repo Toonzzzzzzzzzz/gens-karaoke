@@ -1,7 +1,9 @@
 const { ipcMain } = require('electron');
-const db = require('../db');
+const dbPromise = require('../db');
 
-function registerQueueApi() {
+async function registerQueueApi() {
+  const { db, saveDatabase } = await dbPromise;
+
   ipcMain.removeHandler('getQueue');
   ipcMain.handle('getQueue', () => {
     const stmt = db.prepare('SELECT * FROM queue');
@@ -62,6 +64,9 @@ function registerQueueApi() {
 
     try {
       const result = add(data);
+      if (result.success) {
+        saveDatabase();
+      }
       return result;
     } catch (err) {
       console.error('Error in addQueue transaction:', err.message);
@@ -90,20 +95,22 @@ function registerQueueApi() {
       data.note,
       data.id
     );
-    if (result.changes === 0) {
-      return { success: false, error: 'ไม่พบข้อมูลที่ต้องการอัปเดต' };
+    if (result.changes > 0) {
+      saveDatabase();
+      return { success: true };
     }
-    return { success: true };
+    return { success: false, error: 'ไม่พบข้อมูลที่ต้องการอัปเดต' };
   });
 
   ipcMain.removeHandler('deleteQueue');
   ipcMain.handle('deleteQueue', (_, id) => {
     const stmt = db.prepare('DELETE FROM queue WHERE id = ?');
     const result = stmt.run(id);
-    if (result.changes === 0) {
-      return { success: false, error: 'ไม่พบข้อมูลที่ต้องการลบ' };
+    if (result.changes > 0) {
+      saveDatabase();
+      return { success: true };
     }
-    return { success: true };
+    return { success: false, error: 'ไม่พบข้อมูลที่ต้องการลบ' };
   });
 
   ipcMain.removeHandler('getQueueByRoomAndDate');

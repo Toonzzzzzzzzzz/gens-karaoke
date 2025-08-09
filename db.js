@@ -1,14 +1,97 @@
-const Database = require('better-sqlite3');
+const fs = require('fs');
 const path = require('path');
-const { key_id } = require('./config');
-const db = new Database(path.join(__dirname, 'data.db'));
+const initSqlJs = require('sql.js');
 
-// เพิ่มบรรทัดนี้!
-// ตั้งค่าให้รอสูงสุด 5 วินาที (5000ms) หากฐานข้อมูลไม่ว่าง
-db.pragma('busy_timeout = 5000');
-db.pragma('journal_mode = WAL');
+const dbPath = path.join(__dirname, 'data.db');
 
-function initDatabase() {
+function _saveDatabase(dbInstance) {
+  try {
+    const data = dbInstance.export();
+    const buffer = Buffer.from(data);
+    fs.writeFileSync(dbPath, buffer);
+  } catch (err) {
+    console.error('Failed to save database:', err);
+  }
+}
+
+class Statement {
+  constructor(stmt, db, sql) {
+    this.stmt = stmt;
+    this.db = db;
+    this.sql = sql;
+  }
+
+  get(...params) {
+    this.stmt.bind(params);
+    let result = null;
+    if (this.stmt.step()) {
+      result = this.stmt.getAsObject();
+    }
+    this.stmt.free();
+    return result;
+  }
+
+  all(...params) {
+    this.stmt.bind(params);
+    const results = [];
+    while (this.stmt.step()) {
+      results.push(this.stmt.getAsObject());
+    }
+    this.stmt.free();
+    return results;
+  }
+
+  run(...params) {
+    this.stmt.run(params);
+    this.stmt.free();
+
+    let lastId = null;
+    if (this.sql.trim().toUpperCase().startsWith('INSERT')) {
+      const idStmt = this.db.prepare('SELECT last_insert_rowid() as id');
+      if (idStmt.step()) {
+        lastId = idStmt.getAsObject().id;
+      }
+      idStmt.free();
+    }
+    return { changes: this.db.getRowsModified(), lastInsertRowid: lastId };
+  }
+}
+
+class Database {
+  constructor(db) {
+    this.db = db;
+  }
+
+  prepare(sql) {
+    const stmt = this.db.prepare(sql);
+    return new Statement(stmt, this.db, sql);
+  }
+
+  exec(sql) {
+    this.db.exec(sql);
+  }
+
+  pragma() {
+    return;
+  }
+
+  transaction(fn) {
+    return (...args) => {
+      this.db.exec('BEGIN TRANSACTION');
+      try {
+        const result = fn(...args);
+        this.db.exec('COMMIT');
+        return result;
+      } catch (err) {
+        this.db.exec('ROLLBACK');
+        throw err;
+      }
+    };
+  }
+}
+
+function initDatabase(db) {
+  const { key_id } = require('./config');
   db.exec(`
     CREATE TABLE IF NOT EXISTS room (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -54,12 +137,12 @@ function initDatabase() {
     );
   `);
 
-  // Insert initial data if tables are empty
   const settingRow = db.prepare('SELECT COUNT(*) as count FROM setting').get();
   if (settingRow.count === 0) {
-    db.prepare(
+    const stmt = db.prepare(
       `INSERT INTO setting (key_id, name, address, start, end) VALUES (?, ?, ?, ?, ?)`
-    ).run(key_id, 'ชื่อร้าน', 'ที่อยู่', '00:00', '23:59');
+    );
+    stmt.run(key_id, 'ชื่อร้าน', 'ที่อยู่', '00:00', '23:59');
   }
 
   const roomRow = db.prepare('SELECT COUNT(*) as count FROM room').get();
@@ -77,8 +160,32 @@ function initDatabase() {
       `INSERT INTO staff (name, phone) VALUES (?, ?)`
     ).run('Default Staff', '0000000000');
   }
+  // After init, save once
+  _saveDatabase(db.db); 
 }
 
-initDatabase()
+async function initializeDb() {
+  const SQL = await initSqlJs();
+  let dbInstance;
+  if (fs.existsSync(dbPath)) {
+    const fileBuffer = fs.readFileSync(dbPath);
+    dbInstance = new SQL.Database(fileBuffer);
+  } else {
+    dbInstance = new SQL.Database();
+  }
 
-module.exports = db
+  const dbWrapper = new Database(dbInstance);
+  
+  const checkTable = dbWrapper.prepare("SELECT name FROM sqlite_master WHERE type='table' AND name='setting'").get();
+  if (!checkTable) {
+    console.log('Initializing database schema and default data...');
+    initDatabase(dbWrapper);
+  }
+
+  return {
+    db: dbWrapper,
+    saveDatabase: () => _saveDatabase(dbInstance)
+  };
+}
+
+module.exports = initializeDb();

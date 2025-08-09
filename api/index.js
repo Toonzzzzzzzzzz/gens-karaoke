@@ -4,12 +4,12 @@ const registerSettingApi = require('./setting')
 const registerQueueApi = require('./queue')
 const registerMemberApi = require('./member')
 
-function registerAllApi() {
-  registerRoomApi()
-  registerStaffApi()
-  registerSettingApi()
-  registerQueueApi()
-  registerMemberApi()
+async function registerAllApi() {
+  await registerRoomApi()
+  await registerStaffApi()
+  await registerSettingApi()
+  await registerQueueApi()
+  await registerMemberApi()
 }
 
 module.exports = registerAllApi

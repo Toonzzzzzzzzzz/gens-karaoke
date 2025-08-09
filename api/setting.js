@@ -1,7 +1,9 @@
 const { ipcMain } = require('electron');
-const db = require('../db');
+const dbPromise = require('../db');
 
-function registerSettingApi() {
+async function registerSettingApi() {
+  const { db, saveDatabase } = await dbPromise;
+
   ipcMain.removeHandler('getSetting');
   ipcMain.handle('getSetting', (event, key_id) => {
     const stmt = db.prepare('SELECT * FROM setting WHERE key_id = ?');
@@ -24,6 +26,7 @@ function registerSettingApi() {
     
     try {
       stmt.run(shopName, address, logo1, logo2, start, end, key_id);
+      saveDatabase();
       return { success: true };
     } catch (error) {
       console.error('Failed to update settings:', error);
@@ -37,6 +40,7 @@ function registerSettingApi() {
   ipcMain.handle('addSetting', (_, data) => {
     const stmt = db.prepare('INSERT INTO setting (key_id, value) VALUES (?, ?)');
     stmt.run(data.key_id, data.value);
+    saveDatabase();
     return { success: true };
   });
 
@@ -44,6 +48,7 @@ function registerSettingApi() {
   ipcMain.handle('deleteSetting', (_, id) => {
     const stmt = db.prepare('DELETE FROM setting WHERE id = ?');
     stmt.run(id);
+    saveDatabase();
     return { success: true };
   });
 }

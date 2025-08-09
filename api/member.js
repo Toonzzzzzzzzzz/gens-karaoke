@@ -1,7 +1,9 @@
 const { ipcMain } = require('electron')
-const db = require('../db')
+const dbPromise = require('../db')
 
-function registerMemberApi() {
+async function registerMemberApi() {
+  const { db, saveDatabase } = await dbPromise;
+
   ipcMain.removeHandler('getMembers')
   ipcMain.handle('getMembers', () => {
     const stmt = db.prepare('SELECT * FROM member')
@@ -12,6 +14,7 @@ function registerMemberApi() {
   ipcMain.handle('addMember', (event, member) => {
     const stmt = db.prepare('INSERT INTO member (name, check_in, check_out) VALUES (?, ?, ?)')
     stmt.run(member.name, member.check_in, member.check_out)
+    saveDatabase()
     return { success: true }
   })
 
@@ -19,6 +22,7 @@ function registerMemberApi() {
   ipcMain.handle('deleteMember', (event, id) => {
     const stmt = db.prepare('DELETE FROM member WHERE id = ?')
     stmt.run(id)
+    saveDatabase()
     return { success: true }
   })
 
@@ -26,8 +30,11 @@ function registerMemberApi() {
   ipcMain.handle('updateMember', (event, member) => {
     const stmt = db.prepare('UPDATE member SET name = ?, check_in = ?, check_out = ? WHERE id = ?')
     stmt.run(member.name, member.check_in, member.check_out, member.id)
+    saveDatabase()
     return { success: true }
   })
 }
+
+module.exports = registerMemberApi
 
 module.exports = registerMemberApi

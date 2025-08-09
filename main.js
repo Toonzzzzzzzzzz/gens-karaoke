@@ -1,7 +1,6 @@
 const { app, BrowserWindow, ipcMain } = require('electron')
 const path = require('path')
 const registerAllApi = require('./api')
-require('./db')
 
 function createWindow() {
   const win = new BrowserWindow({
@@ -34,9 +33,9 @@ function createWindow() {
   }
 }
 
-app.whenReady().then(() => {
+app.whenReady().then(async () => {
   createWindow()
-  registerAllApi()
+  await registerAllApi()
 
   ipcMain.handle('printSlip', async (event, { queueId, deviceName }) => {
     const isDev = !app.isPackaged;
