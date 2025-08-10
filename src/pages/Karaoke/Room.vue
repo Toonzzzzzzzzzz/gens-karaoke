@@ -81,7 +81,14 @@ const thaiDate = computed(() => {
 const schedule = computed(() => {
   if (!setting.value || !rooms.value || !queue.value) return [];
 
-  const fullTimeSlots = generateTimeSlots(setting.value.start, setting.value.end, 15);
+
+  let fullTimeSlots = [];
+
+  if (queue.value?.length > 0) {
+    fullTimeSlots = generateTimeSlots(queue.value[0].check_in, setting.value.end, 15);
+  } else {
+    fullTimeSlots = generateTimeSlots(setting.value.start, setting.value.end, 15);
+  }
 
   return rooms.value.map(room => {
     const roomQueue = queue.value.filter(q => q.room === room.name);

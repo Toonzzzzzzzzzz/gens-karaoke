@@ -22,7 +22,7 @@
       </div>
 
       <div class="time-slots">
-        <div class="time-slot" v-for="time in timeSlots" :key="time">
+        <div class="time-slot" v-for="time in timeList" :key="time">
           <span class="time-label">{{ time }}</span>
           <div class="time-line"></div>
         </div>
@@ -114,6 +114,7 @@ const dayParam = route.params.day;
 
 const selectedRoom = ref(null);
 const timeSlots = ref([]);
+const timeList = ref([]);
 const isLoading = ref(true);
 const showModal = ref(false);
 const setting = ref(null);
@@ -145,6 +146,13 @@ onMounted(async () => {
         room: selectedRoom.value,
         date: dayParam,
       });
+      console.log(queue.value);
+      if (queue.value.data?.length > 0) {
+        timeList.value = generateTimeSlots(queue.value.data[0].check_in, setting.value.end, 15);
+      } else {
+        console.log(timeSlots.value);
+        timeList.value = timeSlots.value;
+      }
     }
   } catch (error) {
     toast.error('เกิดข้อผิดพลาดในการโหลดข้อมูลเริ่มต้น');
@@ -318,7 +326,11 @@ const thaiDate = computed(() => {
 
 function getBookingStyle(booking) {
   if (!setting.value) return {};
-  const startHour = parseInt(setting.value.start.split(':')[0], 10);
+  let startHour = parseInt(setting.value.start.split(':')[0], 10);
+  if(queue.value.data.length > 0) {
+    startHour = parseInt(queue.value.data[0].check_in.split(':')[0], 10);
+  }
+  
   const slotHeight = 240; // Height of one hour slot in pixels
   const pixelsPerMinute = slotHeight / 60;
 

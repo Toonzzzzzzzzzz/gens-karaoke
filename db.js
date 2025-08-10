@@ -1,8 +1,15 @@
+const { app } = require('electron');
 const fs = require('fs');
 const path = require('path');
 const initSqlJs = require('sql.js');
 
-const dbPath = path.join(__dirname, 'data.db');
+// Get the user data path
+const userDataPath = app.getPath('userData');
+// Ensure the directory exists
+if (!fs.existsSync(userDataPath)) {
+  fs.mkdirSync(userDataPath, { recursive: true });
+}
+const dbPath = path.join(userDataPath, 'data.db');
 
 function _saveDatabase(dbInstance) {
   try {

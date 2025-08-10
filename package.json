@@ -10,6 +10,7 @@
   "files": [
     "dist/**",
     "main.js",
+    "config/**",
     "preload.js",
     "api/**",
     "package.json",
