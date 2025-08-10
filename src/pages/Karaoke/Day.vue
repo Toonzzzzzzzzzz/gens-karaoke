@@ -327,7 +327,7 @@ const thaiDate = computed(() => {
 function getBookingStyle(booking) {
   if (!setting.value) return {};
   let startHour = parseInt(setting.value.start.split(':')[0], 10);
-  if(queue.value.data.length > 0) {
+  if(queue.value.data.length > 0 && queue.value.data[0].check_in < setting.value.start) {
     startHour = parseInt(queue.value.data[0].check_in.split(':')[0], 10);
   }
   

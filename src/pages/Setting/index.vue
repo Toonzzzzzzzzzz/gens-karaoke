@@ -21,7 +21,7 @@
               <v-col cols="12" md="12">
                 <v-img :src="logo1Base64" v-if="logo1Base64" class="mt-4" max-height="150" style="margin-bottom: 20px;"></v-img>
                 <v-file-input
-                  label="Logo 1"
+                  label="โลโก้หลัก (ขนาด 1000x400)"
                   accept="image/*"
                   @change="onLogo1Selected"
                   variant="outlined"
@@ -30,7 +30,7 @@
               <v-col cols="12" md="12">
                 <v-img :src="logo2Base64" v-if="logo2Base64" class="mt-4" max-height="150" style="margin-bottom: 20px;"></v-img>
                 <v-file-input
-                  label="Logo 2"
+                  label="โลโก้ใบเสร็จ (ขนาด 500x500)"
                   accept="image/*"
                   @change="onLogo2Selected"
                   variant="outlined"

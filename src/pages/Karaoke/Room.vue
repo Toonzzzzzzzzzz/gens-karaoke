@@ -84,7 +84,7 @@ const schedule = computed(() => {
 
   let fullTimeSlots = [];
 
-  if (queue.value?.length > 0) {
+  if (queue.value?.length > 0 && queue.value[0].check_in < setting.value.start) {
     fullTimeSlots = generateTimeSlots(queue.value[0].check_in, setting.value.end, 15);
   } else {
     fullTimeSlots = generateTimeSlots(setting.value.start, setting.value.end, 15);
