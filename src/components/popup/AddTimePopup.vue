@@ -48,13 +48,13 @@
   }
   
   const handleSubmit = () => {
-    console.log('form.value', form.value)
-    console.log('props.member', props.member)
-    // if (form.value.hours >= 1) {
-    //   emit('add-time', { member: props.member, hours: form.value.hours })
-    //   resetForm()
-    //   visible.value = false
-    // }
+    // console.log('form.value', form.value)
+    // console.log('props.member', props.member)
+    if (form.value.hours >= 1) {
+      emit('add-time', { member: props.member, hours: form.value.hours })
+      resetForm()
+      visible.value = false
+    }
   }
   
   const resetForm = () => {

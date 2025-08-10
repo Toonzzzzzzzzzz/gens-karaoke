@@ -35,7 +35,7 @@
 
       <!-- เวลาเข้า & ออก -->
       <div class="form-row">
-        <v-select v-model="form.check_in" :items="times" label="เวลาเข้า" variant="outlined"></v-select>
+        <v-select v-model="form.check_in" :items="times" label="เวลาเข้า" variant="outlined" :disabled="editStatus"></v-select>
         <v-select v-model="form.check_out" :items="times" label="เวลาออก" variant="outlined"></v-select>
       </div>
 

@@ -1,22 +1,62 @@
 {
-  "name": "electron-vue3-sqlite",
+  "name": "gens-karaoke",
   "version": "1.0.0",
   "main": "main.js",
+  "description": "Gens Karaoke",
+  "build": {
+  "appId": "com.gens.karaoke",
+  "productName": "Gens Karaoke",
+  "asar": true,
+  "files": [
+    "dist/**",
+    "main.js",
+    "preload.js",
+    "api/**",
+    "package.json",
+    "!**/*.map",
+    "db.js"
+  ],
+  "extraResources": [
+    { "from": "resources/", "to": "resources", "filter": ["**/*"] }
+  ],
+  "directories": { "buildResources": "build" },
+  "win": {
+    "icon": "Gens-icon.ico",
+    "target": [
+      { "target": "nsis", "arch": ["x64"] },
+      { "target": "portable", "arch": ["x64"] }
+    ],
+    "artifactName": "${productName}-${version}-${arch}.${ext}"
+  },
+  "nsis": {
+    "oneClick": false,
+    "perMachine": false,
+    "allowToChangeInstallationDirectory": true,
+    "createDesktopShortcut": true,
+    "createStartMenuShortcut": true
+  }
+}
+,
   "scripts": {
     "dev": "vite",
     "electron": "electron .",
-    "build": "vite build && node scripts/copy-db.js"
+    "serve:dist": "http-server dist -p 5000 --spa",
+    "build": "vite build",
+    "build:electron": "vite build && electron-builder",
+    "pack:dir": "electron-builder --dir",
+    "pack:win": "electron-builder --win nsis",
+    "pack:portable": "electron-builder --win portable"
   },
   "dependencies": {
     "@mdi/font": "^7.4.47",
     "cors": "^2.8.5",
+    "dotenv": "^17.2.1",
     "express": "^5.1.0",
     "lucide-vue-next": "^0.525.0",
     "multer": "^2.0.2",
     "sass": "^1.89.2",
     "sass-loader": "^13.3.3",
     "sql.js": "^1.13.0",
-    "sqlite3": "^5.1.7",
     "sweetalert2": "^11.22.2",
     "vue": "^3.4.0",
     "vue-router": "^4.5.1",
@@ -27,7 +67,7 @@
   "devDependencies": {
     "@vitejs/plugin-vue": "^5.0.0",
     "electron": "^28.1.0",
-    
+    "electron-builder": "^26.0.12",
     "vite": "^5.0.0"
   }
 }

@@ -1,7 +1,7 @@
 <template>
   <header ref="headerRef" class="top-header">
     <div class="logo-container">
-      <img src="@/assets/images/logo.png" alt="Logo" class="logo" />
+      <img :src="logoSrc" alt="Logo" class="logo" />
     </div>
 
     <nav class="nav-menu">
@@ -13,9 +13,21 @@
   </header>
 </template>
 <script setup>
-import { ref } from 'vue'
+import { ref, onMounted } from 'vue'
 
 const headerRef = ref(null)
+const logoSrc = ref('@/assets/images/logo.png'); // Default to current static logo
+
+onMounted(async () => {
+  try {
+    const settings = await window.api.invoke('getSetting', 'gens');
+    if (settings && settings.logo1) {
+      logoSrc.value = settings.logo1;
+    }
+  } catch (error) {
+    console.error('Failed to load settings for logo:', error);
+  }
+});
 
 defineExpose({ headerRef })
 </script>

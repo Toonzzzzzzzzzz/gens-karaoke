@@ -1,6 +1,10 @@
 const { app, BrowserWindow, ipcMain } = require('electron')
 const path = require('path')
 const registerAllApi = require('./api')
+const dotenv = require('dotenv')
+dotenv.config()
+
+const isDev = process.env.DEV_MODE === 'true';
 
 function createWindow() {
   const win = new BrowserWindow({
@@ -23,13 +27,13 @@ function createWindow() {
       win.reload();
     }, 250);
   });
-  
-  const isDev = !app.isPackaged
+
   if (isDev) {
     win.loadURL('http://localhost:5173')
     win.webContents.openDevTools()
   } else {
     win.loadFile(path.join(__dirname, 'dist/index.html'))
+    win.webContents.openDevTools()
   }
 }
 
@@ -38,7 +42,6 @@ app.whenReady().then(async () => {
   await registerAllApi()
 
   ipcMain.handle('printSlip', async (event, { queueId, deviceName }) => {
-    const isDev = !app.isPackaged;
     const printWindow = new BrowserWindow({
       width: 300, // Width for a standard thermal printer
       height: 900,
@@ -50,12 +53,14 @@ app.whenReady().then(async () => {
       }
     });
 
-    const printUrl = isDev
-      ? `http://localhost:5173/#/print/slip/${queueId}`
-      : `file://${path.join(__dirname, 'dist/index.html')}#/print/slip/${queueId}`;
-
-    printWindow.loadURL(printUrl);
-    printWindow.webContents.openDevTools(); // Open DevTools for debugging
+    if (isDev) {
+      printWindow.loadURL(`http://localhost:5173/#/print/slip/${queueId}`);
+    } else {
+      const filePath = path.join(__dirname, 'dist/index.html');
+      const url = `file://${filePath}#/print/slip/${queueId}`;
+      console.log(`[Print Window] Attempting to load URL in production: ${url}`);
+      printWindow.loadURL(url);
+    }
 
     // Wait for the 'ready-to-print' signal from the slip component
     ipcMain.once('ready-to-print', () => {

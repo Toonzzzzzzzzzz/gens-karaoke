@@ -174,7 +174,7 @@ hr { border: none; border-top: 1px dashed #000; margin: 8px 0; }
 .payment-status { font-weight: 700; text-align: left; margin-top: 8px; font-size: 16px; }
 .payment-status.paid { }
 
-.slip-footer { text-align: left; margin-top: 10px; font-size: 16px; }
+.slip-footer { text-align: center; margin-top: 10px; font-size: 16px; padding-bottom: 10px;}
 
 .loading {
   width: 72mm;

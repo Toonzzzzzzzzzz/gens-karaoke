@@ -196,12 +196,14 @@ async function handleBooking(data) {
       const result = await window.api.invoke('updateQueue', safeData);
       if (result.success) {
         showModal.value = false;
-        toast.success('แก้ไขคิวสำเร็จ');
-        
-        // Update the local data to reflect the change instantly
+        toast.success('แก้ไขคิวสำเร็จ กำลังพิมพ์ใบเสร็จ...');
+
+        // เรียกพิมพ์ใบเสร็จ (ใช้ id ของคิวที่แก้ไข)
+        await window.api.invoke('printSlip', { queueId: safeData.id });
+
+        // อัปเดตข้อมูลในตารางทันที
         const index = queue.value.data.findIndex(b => b.id === safeData.id);
         if (index !== -1) {
-          // To get the correct staff name, we need to refetch or be clever
           const staff = staffs.value.find(s => s.id === safeData.staff);
           queue.value.data[index] = { ...safeData, staff_name: staff ? staff.name : 'ไม่ระบุ' };
         }
@@ -224,15 +226,14 @@ async function handleBooking(data) {
         showModal.value = false;
         toast.success('จองคิวสำเร็จ กำลังพิมพ์ใบเสร็จ...');
 
-        // Call the print function and wait for it to complete
+        // พิมพ์ใบเสร็จ
         await window.api.invoke('printSlip', { queueId: result.id });
 
-        // Fetch the newly created booking to get all details (like staff_name)
+        // ดึงข้อมูลใหม่มาอัปเดต
         const newBookingResult = await window.api.invoke('getQueueById', result.id);
         if (newBookingResult.success) {
           queue.value.data.push(newBookingResult.data);
         } else {
-          // As a fallback, just reload the page if fetching the new data fails
           window.location.reload();
         }
 
@@ -246,6 +247,7 @@ async function handleBooking(data) {
       isLoading.value = false;
     }
   }
+
 }
 
 function back() {
