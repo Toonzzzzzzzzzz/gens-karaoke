@@ -13,9 +13,9 @@ async function registerMemberApi() {
   ipcMain.removeHandler('addMember')
   ipcMain.handle('addMember', (event, member) => {
     const stmt = db.prepare('INSERT INTO member (name, check_in, check_out) VALUES (?, ?, ?)')
-    stmt.run(member.name, member.check_in, member.check_out)
+    const result = stmt.run(member.name, member.check_in, member.check_out)
     saveDatabase()
-    return { success: true }
+    return { success: true, id: result.lastInsertRowid }
   })
 
   ipcMain.removeHandler('deleteMember')
@@ -33,8 +33,21 @@ async function registerMemberApi() {
     saveDatabase()
     return { success: true }
   })
-}
 
-module.exports = registerMemberApi
+  ipcMain.removeHandler('getMemberById');
+  ipcMain.handle('getMemberById', (_, id) => {
+    const stmt = db.prepare('SELECT * FROM member WHERE id = ?');
+    const member = stmt.get(id);
+
+    if (!member) {
+      return { success: false, error: 'ไม่พบผู้ใช้งาน' };
+    }
+
+    // No staff info for board game members
+    member.staff_name = 'ไม่ระบุ';
+
+    return { success: true, data: member };
+  });
+}
 
 module.exports = registerMemberApi

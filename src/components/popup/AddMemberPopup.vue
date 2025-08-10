@@ -102,6 +102,10 @@ const handleSubmit = () => {
     toast.error('ยังไม่ได้ตั้งค่าเวลาสิ้นสุดในระบบ')
     return
   }
+  if (form.value.name.trim() === '') {
+    toast.error('กรุณากรอกชื่อ')
+    return
+  }
   let checkInDate, checkOutDate
 
   if (formMode.value === 'reserve') {

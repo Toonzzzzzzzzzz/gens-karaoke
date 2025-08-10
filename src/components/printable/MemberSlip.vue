@@ -1,6 +1,6 @@
-<!-- SlipPrint.vue (route: #/print/slip/:id) -->
+<!-- MemberSlip.vue (route: #/print/member-slip/:id) -->
 <template>
-  <div class="slip-container" v-if="!isLoading && queue && setting">
+  <div class="slip-container" v-if="!isLoading && member && setting">
     <div class="slip-header">
       <img
         v-if="setting.logo2"
@@ -14,21 +14,15 @@
     </div>
 
     <div class="slip-body">
-      <p><strong>วันที่:</strong> {{ formattedDate }}</p>
+      <p><strong>วันที่:</strong> {{ currentDate }}</p>
       <p><strong>เวลาออกใบเสร็จ:</strong> {{ currentDateTime }}</p>
-      <p><strong>ประเภท:</strong> คาราโอเกะ ห้อง {{ queue.room }}</p>
+      <p><strong>ประเภท:</strong> บอร์ดเกม</p>
       <hr />
-      <p><strong>ลูกค้า:</strong> {{ queue.name }}</p>
-      <p><strong>เบอร์โทร:</strong> {{ queue.phone }}</p>
-      <p><strong>จำนวน:</strong> {{ queue.count }} คน</p>
+      <p><strong>ลูกค้า:</strong> {{ member.name }}</p>
       <hr />
-      <p><strong>เวลาเข้า:</strong> {{ queue.check_in }}</p>
-      <p><strong>เวลาออก:</strong> {{ queue.check_out }}</p>
+      <p><strong>เวลาเข้า:</strong> {{ member.check_in }}</p>
+      <p><strong>เวลาออก:</strong> {{ member.check_out }}</p>
       <hr />
-      <p><strong>พนักงาน:</strong> {{ queue.staff_name }}</p>
-      <p class="payment-status" :class="{ paid: queue.pay_status }">
-        {{ queue.pay_status ? 'ชำระเงินแล้ว' : 'ยังไม่ชำระเงิน' }}
-      </p>
     </div>
 
     <div class="slip-footer">
@@ -47,7 +41,7 @@ import { useRoute } from 'vue-router';
 
 const route = useRoute();
 const isLoading = ref(true);
-const queue = ref(null);
+const member = ref(null);
 const setting = ref(null);
 
 let imageLoadCount = 0;
@@ -58,9 +52,7 @@ const waitForRenderComplete = async () => {
   if (document.fonts && document.fonts.ready) {
     try { await document.fonts.ready; } catch {}
   }
-  // รอ 2 เฟรมให้ layout เสร็จ
   await new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r)));
-  // เช็กว่ามีความสูงเนื้อหาจริง
   for (let i = 0; i < 10; i++) {
     const h = Math.max(document.body.scrollHeight, document.documentElement.scrollHeight);
     if (h > 50) return;
@@ -80,13 +72,6 @@ const onImageLoad = async () => {
   }
 };
 
-const formattedDate = computed(() => {
-  if (!queue.value || !queue.value.date) return '';
-  const [y, m, d] = queue.value.date.split('-');
-  const date = new Date(y, m - 1, d);
-  return date.toLocaleDateString('th-TH', { day: 'numeric', month: 'short', year: 'numeric' });
-});
-
 const currentDateTime = computed(() => {
   const now = new Date();
   return now.toLocaleDateString('th-TH', {
@@ -98,34 +83,42 @@ const currentDateTime = computed(() => {
   });
 });
 
+const currentDate = computed(() => {
+  const now = new Date();
+  return now.toLocaleDateString('th-TH', {
+    day: 'numeric',
+    month: 'short',
+    year: 'numeric',
+  });
+});
+
 onMounted(async () => {
-  const queueId = route.params.id;
+  const memberId = route.params.id;
   try {
-    const [queueResult, settingResult] = await Promise.all([
-      window.api.invoke('getQueueById', queueId),
+    const [memberResult, settingResult] = await Promise.all([
+      window.api.invoke('getMemberById', memberId),
       window.api.invoke('getSetting', 'gens'),
     ]);
 
-    if (queueResult?.success) queue.value = queueResult.data;
+    if (memberResult?.success) member.value = memberResult.data;
     setting.value = settingResult || {};
 
     expectedImages = setting.value.logo2 ? 1 : 0;
 
     isLoading.value = false;
 
-    // ถ้าไม่มีรูปให้รอ render แล้วส่งสั่งพิมพ์เลย
     if (expectedImages === 0) {
       await sendReadyToPrint();
     }
   } catch (err) {
     console.error('Failed to load slip data:', err);
     isLoading.value = false;
-    await sendReadyToPrint(); // fallback ให้พิมพ์เท่าที่มี
+    await sendReadyToPrint(); // fallback
   }
 });
 </script>
 
-<!-- Global: รีเซ็ต + หน้ากระดาษยืดตามคอนเทนต์ -->
+<!-- Styles are copied from BookingSlip.vue -->
 <style>
 html, body {
   margin: 0;
@@ -135,7 +128,7 @@ html, body {
 
 @media print {
   @page {
-    size: 80mm auto;  /* 58mm auto ถ้าเครื่อง 58mm */
+    size: 80mm auto;
     margin: 0;
   }
   html, body {
@@ -144,10 +137,9 @@ html, body {
 }
 </style>
 
-<!-- Scoped: เลย์เอาต์ภายในสลิป -->
 <style scoped>
 .slip-container {
-  width: 72mm;     /* พื้นที่พิมพ์จริงของ 80mm */
+  width: 72mm;
   margin: 0;
   margin-top: 4mm;
   padding: 0;
@@ -156,9 +148,8 @@ html, body {
   font-family: -apple-system, system-ui, "Segoe UI", Roboto, "Noto Sans Thai", sans-serif;
 }
 
-/* กันหัวโดนกินโดย hardware margin: เพิ่ม buffer ตอนพิมพ์เท่านั้น */
 @media print {
-  .slip-container { padding-top: 4mm; } /* ปรับ 3–6mm ตามเครื่อง */
+  .slip-container { padding-top: 4mm; }
 }
 
 .slip-header { text-align: center; margin: 0 0 6px 0; padding: 0; }
@@ -171,15 +162,12 @@ h2 { margin: 0; font-size: 18px; line-height: 1.2; }
 
 hr { border: none; border-top: 1px dashed #000; margin: 8px 0; }
 
-.payment-status { font-weight: 700; text-align: left; margin-top: 8px; font-size: 16px; }
-.payment-status.paid { }
-
 .slip-footer { text-align: center; margin-top: 10px; font-size: 16px; padding-bottom: 10px;}
 
 .loading {
   width: 72mm;
   text-align: center;
   padding: 10px 0;
-  font-family: -apple-system, system-ui, "Noto Sans Thai", sans-serif;
+  font-family: -apple-system, system-ui, "Segoe UI", Roboto, "Noto Sans Thai", sans-serif;
 }
 </style>

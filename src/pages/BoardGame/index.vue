@@ -179,6 +179,10 @@ const onAddMember = async (member) => {
     if (result.success) {
       toast.success('เพิ่มผู้ใช้สำเร็จ')
       addMemberPopupVisible.value = false
+      // Print slip for the new member
+      if (result.id) {
+        onPrintMember({ id: result.id, ...member });
+      }
       setTimeout(() => {
         window.location.reload()
         isLoading.value = false
@@ -263,6 +267,8 @@ const handleAddTime = async (data) => {
 
     if (result.success) {
       toast.success('เพิ่มเวลาสำเร็จ')
+      // Print slip for the updated member
+      onPrintMember(updatedMember);
       setTimeout(() => {
         window.location.reload()
         isLoading.value = false
@@ -278,6 +284,19 @@ const handleAddTime = async (data) => {
     isLoading.value = false
   }
 }
+
+const onPrintMember = async (member) => {
+  if (!member || !member.id) {
+    toast.error('ข้อมูลผู้ใช้ไม่ถูกต้อง ไม่สามารถพิมพ์ได้');
+    return;
+  }
+  try {
+    await window.api.invoke('printMemberSlip', { memberId: member.id });
+  } catch (error) {
+    toast.error('เกิดข้อผิดพลาดในการสั่งพิมพ์');
+    console.error('Print error:', error);
+  }
+};
 
 
 </script>
@@ -353,6 +372,12 @@ const handleAddTime = async (data) => {
 .add-btn {
   background-color: #00c853;
   color: white;
+}
+
+.print-btn {
+  background-color: #2196f3;
+  color: white;
+  margin: 2px 0;
 }
 
 .delete-btn {
