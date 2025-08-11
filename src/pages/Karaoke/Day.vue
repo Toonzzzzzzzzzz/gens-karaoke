@@ -147,7 +147,7 @@ onMounted(async () => {
         date: dayParam,
       });
       console.log(queue.value);
-      if (queue.value.data?.length > 0) {
+      if (queue.value.data?.length > 0 && queue.value.data[0].check_in < setting.value.start) {
         timeList.value = generateTimeSlots(queue.value.data[0].check_in, setting.value.end, 15);
       } else {
         console.log(timeSlots.value);

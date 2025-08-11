@@ -20,6 +20,8 @@
             <v-row>
               <v-col cols="12" md="12">
                 <v-img :src="logo1Base64" v-if="logo1Base64" class="mt-4" max-height="150" style="margin-bottom: 20px;"></v-img>
+              </v-col>
+              <v-col cols="12" md="10">
                 <v-file-input
                   label="โลโก้หลัก (ขนาด 1000x400)"
                   accept="image/*"
@@ -27,14 +29,22 @@
                   variant="outlined"
                 ></v-file-input>
               </v-col>
+              <v-col cols="12" md="2" class="d-flex align-center">
+                <v-btn color="error" size="small" @click="deleteLogo1" v-if="logo1Base64">ลบ</v-btn>
+              </v-col>
               <v-col cols="12" md="12">
                 <v-img :src="logo2Base64" v-if="logo2Base64" class="mt-4" max-height="150" style="margin-bottom: 20px;"></v-img>
+              </v-col>
+              <v-col cols="12" md="10">
                 <v-file-input
                   label="โลโก้ใบเสร็จ (ขนาด 500x500)"
                   accept="image/*"
                   @change="onLogo2Selected"
                   variant="outlined"
                 ></v-file-input>
+              </v-col>
+              <v-col cols="12" md="2" class="d-flex align-center">
+                <v-btn color="error" size="small" @click="deleteLogo2" v-if="logo2Base64">ลบ</v-btn>
               </v-col>
               <v-col cols="12">
                 <v-text-field
@@ -243,6 +253,14 @@ const onLogo2Selected = async (event: Event) => {
     const file = target.files[0];
     logo2Base64.value = await toBase64(file);
   }
+};
+
+const deleteLogo1 = () => {
+  logo1Base64.value = null;
+};
+
+const deleteLogo2 = () => {
+  logo2Base64.value = null;
 };
 
 const saveSettings = async () => {

@@ -1,6 +1,6 @@
 {
   "name": "gens-karaoke",
-  "version": "1.0.0",
+  "version": "1.0.2",
   "main": "main.js",
   "description": "Gens Karaoke",
   "build": {
@@ -44,9 +44,9 @@
     "serve:dist": "http-server dist -p 5000 --spa",
     "build": "vite build",
     "build:electron": "vite build && electron-builder",
-    "pack:dir": "electron-builder --dir",
-    "pack:win": "electron-builder --win nsis",
-    "pack:portable": "electron-builder --win portable"
+    "pack:dir": "vite build && electron-builder --dir",
+    "pack:win": "vite build && electron-builder --win nsis",
+    "pack:portable": "vite build && electron-builder --win portable"
   },
   "dependencies": {
     "@mdi/font": "^7.4.47",
